@@ -169,7 +169,7 @@ def render_svg(fretboard: Fretboard, filename: str):
         js_events = f'onmousemove="showTooltip(event, \'{tooltip_label}\')" onmouseout="hideTooltip()"'
         
         # Draw the circle
-        lines.append(f'  <circle cx="{nx}" cy="{ny}" r="14" fill="{bg}" opacity="{opacity}" stroke="{stroke}" stroke-width="{stroke_width}" {js_events} style="cursor: pointer;"/>')
+        lines.append(f'  <circle cx="{nx}" cy="{ny}" r="14" fill="{bg}" class="note-circle" opacity="{opacity}" stroke="{stroke}" stroke-width="{stroke_width}" {js_events} style="cursor: pointer;"/>')
         
         if split_label:
             # Draw split line

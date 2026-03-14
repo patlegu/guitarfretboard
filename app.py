@@ -9,11 +9,8 @@ from guitarfretboard.core import TUNINGS_GUITAR, TUNINGS_BASS, TUNINGS_UKULELE
 
 st.set_page_config(page_title="Guitar Fretboard Generator", layout="wide")
 
-def render_svg_to_html(filename):
-    with open(filename, "r") as f:
-        svg = f.read()
-    b64 = base64.b64encode(svg.encode('utf-8')).decode("utf-8")
-    return f'<img src="data:image/svg+xml;base64,{b64}" width="100%"/>'
+# The package 'guitarfretboard' should be available in the same directory
+import streamlit.components.v1 as components
 
 def main():
     st.title("🎸 Guitar Fretboard SVG Generator")
@@ -134,7 +131,18 @@ def main():
     render_svg(fb, output_file)
     
     st.markdown("### Preview")
-    st.write(render_svg_to_html(output_file), unsafe_allow_html=True)
+    with open(output_file, "r") as f:
+        svg_content = f.read()
+    
+    # Tooltips need an iframe (components.html) to execute JS securely in Streamlit
+    preview_height = 500 if is_vertical else 350
+    # Wrap in a div to ensure center alignment and no cutoffs for tooltips
+    html_str = f"""
+    <div style="display: flex; justify-content: center; padding: 20px;">
+        {svg_content}
+    </div>
+    """
+    components.html(html_str, height=preview_height, scrolling=True)
     
     import tempfile
     

@@ -153,7 +153,7 @@ class Fretboard:
         
         # Calculate CAGED box boundaries if requested
         caged_base = None
-        if caged_form and root_pitch_caged is not None:
+        if caged_form and caged_form != "None" and root_pitch_caged is not None:
             caged_base = self.get_caged_base_fret(caged_form.upper(), root_pitch_caged)
             
         strings = string_limit if string_limit else range(1, self.num_strings + 1)
@@ -162,7 +162,7 @@ class Fretboard:
             string_pitch = self.get_string_base_pitch(string)
             base_semitones_string = base_pitch - string_pitch
             
-            for octave in [-24, -12, 0, 12, 24]:
+            for octave in range(-84, 85, 12):
                 fret = base_semitones_string + octave
                 if self.canvas_x_min <= fret <= self.canvas_x_max:
                     
