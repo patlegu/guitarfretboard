@@ -1,0 +1,2 @@
+# Required for the web application
+streamlit

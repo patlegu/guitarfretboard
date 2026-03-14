@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guitarfretboard"
+version = "1.2.0"
+authors = [
+  { name="Sébastien Gross" },
+]
+description = "A pure Python SVG guitar fretboard generator with musical intelligence."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "streamlit",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Sam Hocevar License",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+guitarfretboard = "guitarfretboard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["guitarfretboard*"]
