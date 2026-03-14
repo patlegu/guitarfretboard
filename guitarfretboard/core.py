@@ -38,7 +38,8 @@ class Fretboard:
                  chord: bool = False,
                  transpose: int = 0,
                  title: str = "",
-                 legend: List[str] = None):
+                 legend: List[str] = None,
+                 theme: str = "default"):
         self.frets_min = frets_min
         self.frets_max = frets_max
         self.frets_before = frets_before
@@ -57,6 +58,7 @@ class Fretboard:
         self.transpose = transpose
         self.title = title
         self.legend = legend if legend else []
+        self.theme = theme
         
         self.num_strings = len(self.tuning)
         
@@ -87,10 +89,57 @@ class Fretboard:
                 "style": style
             })
 
+    def get_caged_base_fret(self, form: str, root_pitch: int) -> Optional[int]:
+        """Calculates the base fret for a given CAGED form and root note (Standard tuning assumed)."""
+        # The CAGED system revolves around these open chord shapes translated up the neck:
+        # C shape: Root on A string (5th)
+        # A shape: Root on A string (5th)
+        # G shape: Root on E string (6th)
+        # E shape: Root on E string (6th)
+        # D shape: Root on D string (4th)
+        
+        # Standard tuning baselines
+        e_string_pitch = self.tuning[5] # Low E
+        a_string_pitch = self.tuning[4] # A
+        d_string_pitch = self.tuning[3] # D
+        
+        def _get_fret(string_pitch):
+            semitones = (root_pitch - string_pitch) % 12
+            if semitones == 0: semitones = 12 # Prefer higher frets for CAGED boxes if open
+            return semitones
+            
+        if form == 'C':
+            # C shape has root on 5th string. Fret range is roughly [root_fret - 3, root_fret]
+            root_fret = _get_fret(a_string_pitch)
+            return max(0, root_fret - 3)
+        elif form == 'A':
+            # A shape has root on 5th string. Fret range is [root_fret, root_fret + 2]
+            return _get_fret(a_string_pitch)
+        elif form == 'G':
+            # G shape has root on 6th string. Fret range is [root_fret - 3, root_fret]
+            root_fret = _get_fret(e_string_pitch)
+            return max(0, root_fret - 3)
+        elif form == 'E':
+            # E shape has root on 6th string. Fret range [root_fret, root_fret + 2]
+            return _get_fret(e_string_pitch)
+        elif form == 'D':
+            # D shape has root on 4th string. Fret range [root_fret - 1, root_fret + 2]
+            root_fret = _get_fret(d_string_pitch)
+            return max(0, root_fret - 1)
+        return None
+
+    def _is_in_caged_box(self, fret: int, base_fret: int) -> bool:
+        """Check if a fret is within a standard 4-5 fret span."""
+        # A CAGED box usually spans 4 frets (e.g. frets 5,6,7,8).
+        # We allow a stretch of 5 to accommodate modes.
+        return base_fret <= fret <= base_fret + 4
+
     def add_note(self, pitch_semitones: int, label: str = None, string_limit: List[int] = None, 
-                 style: str = "normal", split: bool = False, highlight: bool = False, shade: bool = False):
+                 style: str = "normal", split: bool = False, highlight: bool = False, shade: bool = False,
+                 caged_form: str = None, highlight_caged_only: bool = False, root_pitch_caged: int = None):
         """
         Calculates fingering on all strings for a given pitch and adds them.
+        Can filter or highlight notes based on a specific CAGED form box.
         """
         from .notes import get_pitch_name
         
@@ -98,12 +147,15 @@ class Fretboard:
         
         split_label = None
         if split:
-            # If split is requested, we use the original note name/degree logic from LaTeX
-            # Here for simplicity we just store that it is split.
-            split_label = actual_label # In LaTeX split often shows note + degree
+            split_label = actual_label
             
         base_pitch = pitch_semitones + self.transpose
         
+        # Calculate CAGED box boundaries if requested
+        caged_base = None
+        if caged_form and root_pitch_caged is not None:
+            caged_base = self.get_caged_base_fret(caged_form.upper(), root_pitch_caged)
+            
         strings = string_limit if string_limit else range(1, self.num_strings + 1)
         
         for string in strings:
@@ -113,9 +165,27 @@ class Fretboard:
             for octave in [-24, -12, 0, 12, 24]:
                 fret = base_semitones_string + octave
                 if self.canvas_x_min <= fret <= self.canvas_x_max:
-                    self.add_note_at_fret(string, fret, actual_label, style=style, 
+                    
+                    final_style = style
+                    final_shade = shade
+                    final_highlight = highlight
+                    
+                    if caged_base is not None:
+                        is_in_box = self._is_in_caged_box(fret, caged_base)
+                        if highlight_caged_only:
+                            # Draw everything, but grey out notes outside the box
+                            if not is_in_box:
+                                final_shade = True
+                            else:
+                                final_highlight = True
+                        else:
+                            # Strict filtering: don't draw if outside box
+                            if not is_in_box:
+                                continue
+                                
+                    self.add_note_at_fret(string, fret, actual_label, style=final_style, 
                                          split_label=split_label if split else None,
-                                         highlight=highlight, shade=shade)
+                                         highlight=final_highlight, shade=final_shade)
 
     def add_chord(self, fingering: Dict[int, int], base_fret: int = 0, style: str = "normal"):
         """
@@ -146,3 +216,38 @@ class Fretboard:
             semitones.append(abs_pitch)
         
         return identify_chord_type(semitones)
+        
+    def export(self, filename: str):
+        """
+        Exports the fretboard to the specified file format based on extension.
+        Supports: .svg, .png, .pdf
+        """
+        import os
+        from .renderer_svg import render_svg
+        import tempfile
+
+        ext = os.path.splitext(filename)[1].lower()
+        
+        if ext == ".svg":
+            render_svg(self, filename)
+        elif ext in [".png", ".pdf"]:
+            try:
+                import cairosvg
+                with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp:
+                    temp_svg = tmp.name
+                
+                # First generate SVG
+                render_svg(self, temp_svg)
+                
+                # Then convert based on extension
+                if ext == ".png":
+                    cairosvg.svg2png(url=temp_svg, write_to=filename)
+                elif ext == ".pdf":
+                    cairosvg.svg2pdf(url=temp_svg, write_to=filename)
+                    
+                os.remove(temp_svg)
+            except ImportError:
+                print("Warning: cairosvg is required for PNG/PDF export. Please install it with 'pip install cairosvg'. Saving as SVG instead.")
+                render_svg(self, filename.replace(ext, ".svg"))
+        else:
+            raise ValueError(f"Unsupported file format: {ext}. Use .svg, .png, or .pdf")

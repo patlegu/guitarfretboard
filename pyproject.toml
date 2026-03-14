@@ -6,17 +6,18 @@ build-backend = "setuptools.build_meta"
 name = "guitarfretboard"
 version = "1.2.0"
 authors = [
-  { name="Sébastien Gross" },
+  { name="patlegu" },
 ]
 description = "A pure Python SVG guitar fretboard generator with musical intelligence."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "streamlit",
+    "cairosvg",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Sam Hocevar License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
 

@@ -22,7 +22,7 @@ def main():
     with st.sidebar:
         st.header("Settings")
         
-        mode = st.radio("Mode", ["Scale", "Chord"])
+        mode = st.radio("Mode", ["Scale", "Arpeggio", "Chord"])
         
         instrument = st.selectbox("Instrument", ["Guitar", "Bass", "Ukulele"])
         if instrument == "Guitar":
@@ -43,38 +43,62 @@ def main():
         with col2:
             is_left = st.checkbox("Left-handed")
             
+        from guitarfretboard.themes import THEMES
+        theme = st.selectbox("Visual Theme", list(THEMES.keys()))
+            
         title = st.text_input("Diagram Title", value="")
         show_tuning = st.checkbox("Show Tuning Names", value=True)
         show_fret_numbers = st.checkbox("Show Fret Numbers", value=True)
 
     # Main area
-    if mode == "Scale":
-        c1, c2 = st.columns(2)
+    if mode in ["Scale", "Arpeggio"]:
+        c1, c2, c3 = st.columns(3)
         with c1:
             root = st.selectbox("Root Note", ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"])
         with c2:
-            from guitarfretboard.scales import SCALES
-            scale_name = st.selectbox("Scale Type", list(SCALES.keys()))
+            if mode == "Scale":
+                from guitarfretboard.scales import SCALES
+                pattern_name = st.selectbox("Scale Type", list(SCALES.keys()))
+            else:
+                from guitarfretboard.arpeggios import ARPEGGIOS
+                pattern_name = st.selectbox("Arpeggio Type", list(ARPEGGIOS.keys()))
+                
+        with c3:
+            caged_form = st.selectbox("CAGED Form (filter)", ["None", "C", "A", "G", "E", "D"])
+            highlight_caged = False
+            if caged_form != "None":
+                highlight_caged = st.checkbox("Highlight box only (don't crop)", value=False)
+            else:
+                caged_form = None # Pass None to backend
             
         fb = Fretboard(
             frets_max=frets,
             chord=is_vertical,
             left_handed=is_left,
-            title=title if title else f"{root} {scale_name}",
+            title=title if title else f"{root} {pattern_name}",
             tuning=tuning,
             show_tuning=show_tuning,
-            fret_numbers=show_fret_numbers
+            fret_numbers=show_fret_numbers,
+            theme=theme
         )
         
         root_pitch = parse_pitch(root)
-        intervals = get_scale_intervals(scale_name)
+        if mode == "Scale":
+            from guitarfretboard.scales import get_scale_intervals
+            intervals = get_scale_intervals(pattern_name)
+        else:
+            from guitarfretboard.arpeggios import get_arpeggio_intervals
+            intervals = get_arpeggio_intervals(pattern_name)
         
         from guitarfretboard.notes import parse_interval
         for interval in intervals:
             semitones = parse_interval(interval)
             pitch = (root_pitch + semitones) % 12
             style = "5" if semitones == 0 else "2"
-            fb.add_note(pitch, style=style)
+            fb.add_note(pitch, style=style, 
+                        caged_form=caged_form, 
+                        highlight_caged_only=highlight_caged, 
+                        root_pitch_caged=root_pitch)
             
     else:  # Chord mode
         st.info("Select a predefined chord shape or add notes manually.")
@@ -96,7 +120,8 @@ def main():
             title=title if title else f"{chord_type} ({subtype})",
             tuning=tuning,
             show_tuning=show_tuning,
-            fret_numbers=show_fret_numbers
+            fret_numbers=show_fret_numbers,
+            theme=theme
         )
         fb.add_chord(fingering, base_fret=base_fret, style="5")
         
@@ -111,8 +136,29 @@ def main():
     st.markdown("### Preview")
     st.write(render_svg_to_html(output_file), unsafe_allow_html=True)
     
-    with open(output_file, "rb") as f:
-        st.download_button("Download SVG", f, "fretboard.svg", "image/svg+xml")
+    import tempfile
+    
+    st.markdown("### Export")
+    export_fmt = st.radio("Download Format", ["svg", "png", "pdf"], horizontal=True)
+    
+    with tempfile.NamedTemporaryFile(suffix=f".{export_fmt}", delete=False) as tmp:
+        tmp_path = tmp.name
+        
+    fb.export(tmp_path)
+    
+    with open(tmp_path, "rb") as f:
+        mime_type = "image/svg+xml" if export_fmt == "svg" else f"image/{export_fmt}"
+        if export_fmt == "pdf":
+            mime_type = "application/pdf"
+            
+        st.download_button(
+            label=f"Download {export_fmt.upper()}",
+            data=f,
+            file_name=f"fretboard.{export_fmt}",
+            mime=mime_type
+        )
+        
+    os.remove(tmp_path)
 
 if __name__ == "__main__":
     main()
