@@ -1,6 +1,10 @@
-# Guitar Fretboard (Python)
+# 🎸 Guitar Fretboard (Python)
 
-This project is a **pure Python library** for generating high-quality guitar fretboard diagrams. It produces standalone SVG diagrams with zero external dependencies.
+**Interactive Python toolkit for generating high-quality SVG guitar fretboard diagrams with real-time chord detection and musical intelligence.**
+
+---
+
+This project provides a robust engine for musicians, teachers, and developers to explore and visualize the guitar neck. It generates standalone SVG diagrams with zero external dependencies, perfect for use in websites, documentation, or study materials.
 
 ## ✨ Features
 *   **Interactive Web Console**: Real-time fretboard where you can click to add/remove notes.

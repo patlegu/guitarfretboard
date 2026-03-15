@@ -8,12 +8,15 @@ version = "1.2.0"
 authors = [
   { name="patlegu" },
 ]
-description = "A pure Python SVG guitar fretboard generator with musical intelligence."
+description = "Interactive Python toolkit for generating SVG guitar fretboards with real-time chord detection and musical intelligence."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "streamlit",
     "cairosvg",
+    "fastapi",
+    "uvicorn",
+    "jinja2",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
