@@ -111,3 +111,14 @@ THEMES = {
     "vintage": VINTAGE,
     "minimalist": MINIMALIST
 }
+
+# Mapping for note-specific coloring
+NOTE_COLORS = {
+    "A": "#FF4136", # Rouge
+    "B": "#FF851B", # Orange
+    "C": "#FFDC00", # Jaune
+    "D": "#2ECC40", # Vert
+    "E": "#0074D9", # Bleu
+    "F": "#B10DC9", # Violet
+    "G": "#F012BE"  # Rose (Magenta-ish)
+}

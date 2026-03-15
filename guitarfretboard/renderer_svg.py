@@ -8,7 +8,7 @@ from typing import List
 from .core import Fretboard
 from .notes import get_pitch_name
 
-from .themes import THEMES
+from .themes import THEMES, NOTE_COLORS
 
 
 def render_svg(fretboard: Fretboard, filename: str):
@@ -131,15 +131,60 @@ def render_svg(fretboard: Fretboard, filename: str):
         # Draw Tuning
         if fretboard.show_tuning:
             # Position tuning at the "headstock" end
-            tx, ty = get_coords(fretboard.canvas_x_min, s_idx)
+            head_fret = fretboard.canvas_x_min
+            tx, ty = get_coords(head_fret, s_idx)
             pitch_str = get_pitch_name(fretboard.get_string_base_pitch(s_idx))
             
             if fretboard.chord:
-                lines.append(f'  <text x="{tx}" y="{ty + 25}" class="tuning-text">{pitch_str}</text>')
+                # Vertical mode: Normally names are above the nut
+                offset = -25 if fretboard.left_handed else 25
+                lines.append(f'  <text x="{tx}" y="{ty - 25}" class="tuning-text">{pitch_str}</text>')
             else:
-                lines.append(f'  <text x="{tx - 25}" y="{ty}" class="tuning-text">{pitch_str}</text>')
+                # Horizontal mode: Normally names are left of the nut
+                offset = 25 if fretboard.left_handed else -25
+                lines.append(f'  <text x="{tx + offset}" y="{ty}" class="tuning-text">{pitch_str}</text>')
 
-    # Draw Notes
+    # Interactive Click Zones and Hidden All-Notes
+    if getattr(fretboard, "interactive", False):
+        for s_idx in range(1, fretboard.num_strings + 1):
+            for i in range(fretboard.canvas_x_min, fretboard.canvas_x_max + 1):
+                # Calculate center coordinates for the note
+                if i == 0:
+                    cx, cy = get_coords(-0.4, s_idx)
+                else:
+                    cx, cy = get_coords(i - 0.5, s_idx)
+                
+                pitch = (fretboard.get_string_base_pitch(s_idx) + i) % 12
+                label = get_pitch_name(pitch)
+                
+                # Interactive click zone rect
+                rect_width = FRET_WIDTH if i > 0 else 24
+                rect_height = STRING_HEIGHT
+                rx = cx - rect_width/2
+                ry = cy - rect_height/2
+                
+                # Always horizontal layout for web interactivity for now, simplify the click zones
+                lines.append(f'  <rect x="{rx}" y="{ry}" width="{rect_width}" height="{rect_height}" class="interactive-click-zone" data-string="{s_idx}" data-fret="{i}" data-pitch="{pitch}"/>')
+                
+                # Hidden note group
+                bg_int = theme["styles"]["normal"]["fill"]
+                fg_int = theme["styles"]["normal"]["text"]
+                
+                if getattr(fretboard, "use_note_colors", False):
+                    base_label = label[0].upper()
+                    if base_label in NOTE_COLORS:
+                        bg_int = NOTE_COLORS[base_label]
+                        if base_label in ["C", "D", "G"]:
+                             fg_int = "black"
+                        else:
+                             fg_int = "white"
+
+                lines.append(f'  <g id="note-{s_idx}-{i}" class="note-group" visibility="hidden" pointer-events="none">')
+                lines.append(f'    <circle cx="{cx}" cy="{cy}" r="14" fill="{bg_int}" class="note-circle" stroke="black" stroke-width="1"/>')
+                lines.append(f'    <text x="{cx}" y="{cy}" fill="{fg_int}" class="note-text">{label}</text>')
+                lines.append(f'  </g>')
+
+    # Draw Pre-defined Notes (if any)
     for note in fretboard.notes:
         fret = note["fret"]
         string = note["string"]
@@ -159,6 +204,19 @@ def render_svg(fretboard: Fretboard, filename: str):
         color_def = theme["styles"].get(style, theme["styles"]["normal"])
         bg = color_def["fill"]
         fg = color_def["text"]
+        
+        # Override with note-specific colors if enabled
+        if getattr(fretboard, "use_note_colors", False):
+            # Check the base note name (e.g. "C" from "C" or "C#")
+            base_label = label[0].upper()
+            if base_label in NOTE_COLORS:
+                bg = NOTE_COLORS[base_label]
+                # Adjust text color for contrast if needed, but yellow/orange might need dark text
+                if base_label in ["C", "D", "G"]: # Lighter colors
+                     fg = theme.get("note_text_light", "black")
+                else:
+                     fg = theme.get("note_text_dark", "white")
+        
         stroke = color_def.get("stroke", "black")
         
         opacity = 0.3 if shade else 1.0

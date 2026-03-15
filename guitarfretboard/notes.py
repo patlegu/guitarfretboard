@@ -4,7 +4,7 @@ Notes, intervals and pitch definitions for guitarfretboard.
 Ported from guitar-fretboard.notes.sty.
 """
 
-NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B"]
+NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 # Mapping notes to their semitone value from C
 # We include standard accidentals as well as some enharmonics.
@@ -36,8 +36,8 @@ INTERVALS = {
     "m7": 10, "7": 11, "d7": 9, "A7": 12,
     # Extended intervals
     "8": 12,
-    "m9": 13, "9": 14,
-    "11": 17,
+    "m9": 13, "9": 14, "A9": 15,
+    "11": 17, "A11": 18,
     "m13": 20, "13": 21,
     
     # Aliases
@@ -47,6 +47,9 @@ INTERVALS = {
     "b5": 6, "S5": 8,
     "b6": 8, "bb6": 7, "S6": 10,
     "b7": 10, "bb7": 9, "S7": 12,
+    "b9": 13, "S9": 15,
+    "b11": 16, "S11": 18,
+    "b13": 20, "S13": 22,
 }
 
 def parse_pitch(pitch_str: str) -> int:
@@ -69,21 +72,47 @@ def parse_interval(interval_str: str) -> int:
 
 # Common chord interval patterns (using semitone distances from root)
 CHORD_PATTERNS = {
+    # Triads
     (0, 4, 7): "Major",
-    (0, 3, 7): "minor",
-    (0, 4, 7, 10): "7",
-    (0, 4, 7, 11): "Major 7",
-    (0, 3, 7, 10): "minor 7",
-    (0, 3, 7, 11): "minor Major 7",
-    (0, 4, 8): "Augmented",
-    (0, 3, 6): "Diminished",
-    (0, 3, 6, 9): "Diminished 7",
-    (0, 3, 6, 10): "m7b5",
-    (0, 2, 7): "Sus2",
-    (0, 5, 7): "Sus4",
-    (0, 7): "5 (Power Chord)",
+    (0, 3, 7): "m",
+    (0, 4, 8): "aug",
+    (0, 3, 6): "dim",
+    (0, 2, 7): "sus2",
+    (0, 5, 7): "sus4",
+    (0, 7): "5",
+    
+    # 6th chords
     (0, 4, 7, 9): "6",
     (0, 3, 7, 9): "m6",
+    (0, 4, 7, 9, 14): "6/9",
+    
+    # 7th chords
+    (0, 4, 7, 10): "7",
+    (0, 4, 7, 11): "maj7",
+    (0, 3, 7, 10): "m7",
+    (0, 3, 7, 11): "m(maj7)",
+    (0, 4, 8, 10): "7#5",
+    (0, 4, 8, 11): "maj7#5",
+    (0, 3, 6, 9): "dim7",
+    (0, 3, 6, 10): "m7b5",
+    (0, 4, 6, 10): "7b5",
+    (0, 5, 7, 10): "7sus4",
+    
+    # 9th chords
+    (0, 4, 7, 10, 14): "9",
+    (0, 4, 7, 11, 14): "maj9",
+    (0, 3, 7, 10, 14): "m9",
+    (0, 4, 7, 10, 13): "7b9",
+    (0, 4, 7, 10, 15): "7#9",
+    (0, 4, 7, 14): "add9",
+    (0, 3, 7, 14): "m(add9)",
+    
+    # 11th & 13th
+    (0, 4, 7, 10, 14, 17): "11",
+    (0, 3, 7, 10, 14, 17): "m11",
+    (0, 4, 7, 10, 14, 21): "13",
+    (0, 4, 7, 11, 14, 21): "maj13",
+    (0, 3, 7, 10, 14, 21): "m13",
 }
 
 def identify_chord_type(semitones: List[int]) -> str:

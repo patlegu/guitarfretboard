@@ -99,16 +99,34 @@ def main():
             
     else:  # Chord mode
         st.info("Select a predefined chord shape or add notes manually.")
-        chord_type = st.selectbox("Chord Category", list(CHORD_SHAPES.keys()))
-        subtype = st.selectbox("Shape Type", list(CHORD_SHAPES[chord_type].keys()))
+        chord_cats = list(CHORD_SHAPES.keys()) + ["Custom"]
+        chord_type = st.selectbox("Chord Category", chord_cats)
         
-        if subtype == "open":
-            specific = st.selectbox("Specific Open Chord", list(CHORD_SHAPES[chord_type]["open"].keys()))
-            fingering = CHORD_SHAPES[chord_type]["open"][specific]
+        if chord_type == "Custom":
+            st.write("Define frets for each string (use -1 for muted/unplayed string):")
+            cols = st.columns(len(tuning))
+            fingering = {}
+            # Strings are 1-indexed, with 1 being the highest pitch (bottom visually in horizontal, right in vertical)
+            # We want to display them in a logical order, usually low to high (e.g., 6 to 1) for standard tuning
+            for i in range(len(tuning)):
+                string_num = len(tuning) - i
+                with cols[i]:
+                    fret_val = st.number_input(f"Str {string_num}", min_value=-1, max_value=frets, value=-1, step=1)
+                    if fret_val != -1:
+                        fingering[string_num] = fret_val
+            
             base_fret = 0
+            subtype = "custom"
         else:
-            base_fret = st.number_input("Barre Fret (Base)", 0, 12, 0)
-            fingering = CHORD_SHAPES[chord_type][subtype]
+            subtype = st.selectbox("Shape Type", list(CHORD_SHAPES[chord_type].keys()))
+            
+            if subtype == "open":
+                specific = st.selectbox("Specific Open Chord", list(CHORD_SHAPES[chord_type]["open"].keys()))
+                fingering = CHORD_SHAPES[chord_type]["open"][specific]
+                base_fret = 0
+            else:
+                base_fret = st.number_input("Barre Fret (Base)", 0, 12, 0)
+                fingering = CHORD_SHAPES[chord_type][subtype]
 
         fb = Fretboard(
             frets_max=max(frets, base_fret + 4),
@@ -120,7 +138,7 @@ def main():
             fret_numbers=show_fret_numbers,
             theme=theme
         )
-        fb.add_chord(fingering, base_fret=base_fret, style="5")
+        fb.add_chord(fingering, base_fret=base_fret, style="normal")
         
         # Display identified name
         identified = fb.identify_chord()
@@ -136,9 +154,9 @@ def main():
     
     # Tooltips need an iframe (components.html) to execute JS securely in Streamlit
     preview_height = 500 if is_vertical else 350
-    # Wrap in a div to ensure center alignment and no cutoffs for tooltips
+    # Wrap in a div to ensure center alignment, no cutoffs, and a white background so transparent SVGs are visible
     html_str = f"""
-    <div style="display: flex; justify-content: center; padding: 20px;">
+    <div style="display: flex; justify-content: center; padding: 20px; background-color: white; border-radius: 8px;">
         {svg_content}
     </div>
     """
@@ -155,16 +173,18 @@ def main():
     fb.export(tmp_path)
     
     with open(tmp_path, "rb") as f:
-        mime_type = "image/svg+xml" if export_fmt == "svg" else f"image/{export_fmt}"
-        if export_fmt == "pdf":
-            mime_type = "application/pdf"
-            
-        st.download_button(
-            label=f"Download {export_fmt.upper()}",
-            data=f,
-            file_name=f"fretboard.{export_fmt}",
-            mime=mime_type
-        )
+        file_bytes = f.read()
+        
+    mime_type = "image/svg+xml" if export_fmt == "svg" else f"image/{export_fmt}"
+    if export_fmt == "pdf":
+        mime_type = "application/pdf"
+        
+    st.download_button(
+        label=f"Download {export_fmt.upper()}",
+        data=file_bytes,
+        file_name=f"fretboard.{export_fmt}",
+        mime=mime_type
+    )
         
     os.remove(tmp_path)
 

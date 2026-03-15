@@ -72,3 +72,11 @@ venv.bak/
 *.svg
 *.png
 *.pdf
+
+# Media & Logs
+*.webp
+*.log
+uvicorn.log
+nohup.out
+ /srv/guitarfretboard/uvicorn.log
+ /srv/guitarfretboard/web/static/*.webp

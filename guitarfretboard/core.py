@@ -39,7 +39,9 @@ class Fretboard:
                  transpose: int = 0,
                  title: str = "",
                  legend: List[str] = None,
-                 theme: str = "default"):
+                 theme: str = "default",
+                 interactive: bool = False,
+                 use_note_colors: bool = False):
         self.frets_min = frets_min
         self.frets_max = frets_max
         self.frets_before = frets_before
@@ -59,6 +61,8 @@ class Fretboard:
         self.title = title
         self.legend = legend if legend else []
         self.theme = theme
+        self.interactive = interactive
+        self.use_note_colors = use_note_colors
         
         self.num_strings = len(self.tuning)
         

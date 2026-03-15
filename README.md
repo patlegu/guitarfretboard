@@ -3,40 +3,49 @@
 This project is a **pure Python library** for generating high-quality guitar fretboard diagrams. It produces standalone SVG diagrams with zero external dependencies.
 
 ## ✨ Features
-*   **Zero Dependencies**: Generates pure SVG diagrams with pure Python.
-*   **Music Theory Logic**: Parses chords, intervals, modes, generates full scales **and Arpeggios**.
-*   **CAGED System Support**: Filter or visually highlight scales using the 5 classic CAGED positions.
-*   **Chord Logic**: 
-    *   **Chord Detection**: Automatically identifies chord names and inversions from notes on the fretboard.
-    *   **Chord Dictionary**: Easy placement of common shapes (Major, Minor, 7ths, Barre chords).
-*   **Modern Interfaces**:
-    *   **CLI Tool**: Create diagrams directly from your terminal.
-    *   **Web App**: Interactive Streamlit application for real-time preview (see `app.py`).
-*   **Full Parity**: Supports Chord mode (vertical), Left-handed mode, Split notes, Highlights, and Shaded notes.
+*   **Interactive Web Console**: Real-time fretboard where you can click to add/remove notes.
+*   **Musical Intelligence**: 
+    *   **Live Chord Detection**: Instantly identifies over 50 chord types, including Jazz and altered voicings (9th, 11th, 13th, 7b9, etc.).
+    *   **Scale & Arpeggio Engine**: Generates full patterns (Major, Minor, Pentatonic, Harmonic Minor, Melodic Minor, and Symmetric scales).
+    *   **Dynamic UI**: Headers and titles automatically adapt based on the active mode (Scale/Arp/Chord).
+*   **Visual Enhancements**:
+    *   **Note Coloring (A-G)**: Optional standardized visual coding for easier identification (A=Red, B=Orange, etc.).
+    *   **Flexible Themes**: Light, Dark, Vintage, and Minimalist styles.
+*   **CAGED System Support**: Filter scales using the 5 classic CAGED positions.
+*   **Standard Parity**: Supports Chord mode (vertical), Left-handed mode, Split notes, Highlights, and Legends.
+*   **Multi-Platform**: CLI Tool, FastAPI Interactive App, and standard Streamlit interface.
 
 ## 🚀 Installation
 
-It is recommended to install the package inside a Python virtual environment.
+It is recommended to use a Python virtual environment.
 
 ```bash
-# Clone the repository and navigate to it
-git clone <repository_url>
-cd guitarfretboard-standalone
-
-# Create and activate a virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install the package and its dependencies (including Streamlit)
+# Install the package in editable mode
 pip install -e .
+
+# Install web dependencies (FastAPI, Uvicorn)
+pip install fastapi uvicorn
 ```
 
 ---
 
-## 💻 1. Web Application (Interactive)
+## 💻 1. Interactive Web Application (FastAPI)
 
-The easiest way to generate diagrams is through the included interactive Web App. It allows you to select scales, chords, tunings, and visual styles through a graphical interface.
+The primary interface for the project is a modern, real-time web application.
 
+```bash
+uvicorn web.main:app --reload
+```
+Open **http://127.0.0.1:8000** in your browser to start clicking notes and exploring scales!
+
+### Feature Highlight: Manual Mode & Chord Detection
+Even when exploring a specific scale, you can **manually add or remove notes** by clicking on the fretboard. The application will asynchronously communicate with the backend to guess the chord name in real-time at the top of the screen.
+
+---
+
+## 📊 2. Classic Web Application (Streamlit)
+
+A legacy form-based version is also available:
 ```bash
 streamlit run app.py
 ```
@@ -131,6 +140,18 @@ render_svg(fb, "b_minor_barre.svg")
 | Split Notes & Styles | Automated Legend |
 | :---: | :---: |
 | ![advanced_styles](advanced_styles.svg) | ![horizontal_scale](horizontal_scale.svg) |
+
+---
+
+## 🗺️ Roadmap & Future Improvements
+
+While the core engine is now robust and professional, the following features are planned for future releases:
+
+1.  **Audio Feedback**: Integration of the Web Audio API to hear notes and chords when clicking on the fretboard.
+2.  **Smart Accidentals**: An intelligent engine to automatically toggle between Sharps (`#`) and Flats (`b`) based on the harmonic context of the selected scale.
+3.  **Advanced Export**: A direct "Export as PNG/PDF" button in the web interface (currently available via CLI).
+4.  **Mobile Optimization**: Refining the touch interface for use on tablets and smartphones during practice sessions.
+5.  **Chord Progression Builder**: A tool to chain multiple fretboard diagrams together to visualize a full song or sequence.
 
 ## 📜 License
 
